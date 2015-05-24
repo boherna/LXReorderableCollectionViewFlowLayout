@@ -81,6 +81,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
 - (void)setDefaults {
     _scrollingSpeed = 300.0f;
     _scrollingTriggerEdgeInsets = UIEdgeInsetsMake(50.0f, 50.0f, 50.0f, 50.0f);
+	_draggingItemScale = 1.2;
 }
 
 - (void)setupCollectionView {
@@ -314,21 +315,35 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
             UICollectionViewCell *collectionViewCell = [self.collectionView cellForItemAtIndexPath:self.selectedItemIndexPath];
             
             self.currentView = [[UIView alloc] initWithFrame:collectionViewCell.frame];
-            
-            collectionViewCell.highlighted = YES;
-            UIView *highlightedImageView = [collectionViewCell LX_snapshotView];
-            highlightedImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            highlightedImageView.alpha = 1.0f;
-            
-            collectionViewCell.highlighted = NO;
-            UIView *imageView = [collectionViewCell LX_snapshotView];
-            imageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            imageView.alpha = 0.0f;
-            
-            [self.currentView addSubview:imageView];
-            [self.currentView addSubview:highlightedImageView];
+			UIView *highlightedImageView = nil;
+			UIView *imageView = nil;
+
+			if ([self.delegate respondsToSelector:@selector(collectionView:layout:snapshotForDraggingItemAtIndexPath:)]) {
+				UIImage *snapshot = [self.delegate collectionView:self.collectionView layout:self snapshotForDraggingItemAtIndexPath:self.selectedItemIndexPath];
+				if (snapshot)
+				{
+					UIView * snapshotImageView = [[UIImageView alloc] initWithImage:snapshot];
+					snapshotImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+					[self.currentView addSubview:snapshotImageView];
+				}
+			}
+			else
+			{
+				collectionViewCell.highlighted = YES;
+				highlightedImageView = [collectionViewCell LX_snapshotView];
+				highlightedImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+				highlightedImageView.alpha = 1.0f;
+
+				collectionViewCell.highlighted = NO;
+				imageView = [collectionViewCell LX_snapshotView];
+				imageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+				imageView.alpha = 0.0f;
+
+				[self.currentView addSubview:imageView];
+				[self.currentView addSubview:highlightedImageView];
+			}
+
             [self.collectionView addSubview:self.currentView];
-            
             self.currentViewCenter = self.currentView.center;
             
             __weak typeof(self) weakSelf = self;
@@ -339,7 +354,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
              animations:^{
                  __strong typeof(self) strongSelf = weakSelf;
                  if (strongSelf) {
-                     strongSelf.currentView.transform = CGAffineTransformMakeScale(1.1f, 1.1f);
+                     strongSelf.currentView.transform = CGAffineTransformMakeScale(self.draggingItemScale, self.draggingItemScale);
                      highlightedImageView.alpha = 0.0f;
                      imageView.alpha = 1.0f;
                  }
