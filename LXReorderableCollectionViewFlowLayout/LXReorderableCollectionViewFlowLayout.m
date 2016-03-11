@@ -174,7 +174,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
     NSIndexPath *newIndexPath = [self.collectionView indexPathForItemAtPoint:self.currentView.center];
     NSIndexPath *previousIndexPath = self.selectedItemIndexPath;
     
-    if ((newIndexPath == nil) || [newIndexPath isEqual:previousIndexPath]) {
+    if ((newIndexPath == nil) || (previousIndexPath == nil) || [newIndexPath isEqual:previousIndexPath]) {
         return;
     }
     
@@ -192,13 +192,13 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
     __weak typeof(self) weakSelf = self;
     [self.collectionView performBatchUpdates:^{
         __strong typeof(self) strongSelf = weakSelf;
-        if (strongSelf) {
+        if (strongSelf && previousIndexPath && newIndexPath) {
             [strongSelf.collectionView deleteItemsAtIndexPaths:@[ previousIndexPath ]];
             [strongSelf.collectionView insertItemsAtIndexPaths:@[ newIndexPath ]];
         }
     } completion:^(BOOL finished) {
         __strong typeof(self) strongSelf = weakSelf;
-        if ([strongSelf.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:didMoveToIndexPath:)]) {
+        if ([strongSelf.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:didMoveToIndexPath:)] && previousIndexPath && newIndexPath) {
             [strongSelf.dataSource collectionView:strongSelf.collectionView itemAtIndexPath:previousIndexPath didMoveToIndexPath:newIndexPath];
         }
     }];
